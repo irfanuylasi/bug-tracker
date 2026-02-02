@@ -7,12 +7,12 @@ pipeline {
     // }
 
     stages {
-        stage('Prepare Environment') {
-            steps {
-                // Create the directory and set permissions before the Docker agent starts
-                sh 'mkdir -p /var/jenkins_home/go-cache && chmod 777 /var/jenkins_home/go-cache'
-                }
-        }
+//         stage('Prepare Environment') {
+//             steps {
+//                 // Create the directory and set permissions before the Docker agent starts
+//                 sh 'mkdir -p /var/jenkins_home/go-cache && chmod 777 /var/jenkins_home/go-cache'
+//                 }
+//        }
         stage('Unit tests - Backend') {
             agent {
                 docker {
@@ -21,8 +21,8 @@ pipeline {
                     // Redirect GOCACHE and GOPATH to the workspace
                     // This ensures downloads persist between runs
                     args '''
-                        -e GOCACHE=/tmp/.cache 
-                        -e GOPATH=/var/jenkins_home/go-cache 
+                        -e GOCACHE=${WORKSPACE}/.go-cache/cache
+                        -e GOPATH=${WORKSPACE}/.go-cache/path 
                         -v /var/jenkins_home/go-cache:/var/jenkins_home/go-cache
                     '''
                 }
