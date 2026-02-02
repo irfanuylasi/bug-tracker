@@ -57,6 +57,13 @@ pipeline {
                     '''
                 }
             }
+            // post actions after frontend tests
+            post {
+                always {
+                    junit 'bugtracker-frontend/test-results.xml'
+                }
+
+            }
         }
         stage('Maintenance: Cache Check') {
             steps {
