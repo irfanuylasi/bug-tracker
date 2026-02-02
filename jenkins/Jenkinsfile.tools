@@ -1,19 +1,13 @@
 pipeline {
     agent any
 
-    // tools {
+    tools {
         // This must match the name you gave the tool in Step 1
-    //     go 'go-1.25.6'
-    // }
+        go 'go-1.25.6'
+    }
 
     stages {
         stage('Unit tests - Backend') {
-            agent {
-                docker {
-                    image 'snakee/golang-junit:1.21'
-                    reuseNode true
-                }
-            }
             steps {
                 dir('bugtracker-backend') {
                     // This will now work because 'go' is in the PATH
