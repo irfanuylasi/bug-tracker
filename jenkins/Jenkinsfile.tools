@@ -21,7 +21,7 @@ pipeline {
             steps {
                 dir('bugtracker-frontend') {
                     // This will now work because 'npm' is in the PATH
-                    sh 'node -v'
+                    // sh 'node -v'
                     sh 'npm ci'
                     sh 'npm test'
                 }
