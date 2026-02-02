@@ -12,6 +12,8 @@ pipeline {
                 docker {
                     image 'snakee/golang-junit:1.21'
                     reuseNode true
+                    // Redirect GOCACHE and GOPATH to the workspace                    
+                    args '-e GOCACHE=/tmp/.cache -e GOPATH=/tmp/go'
                 }
             }
             steps {
