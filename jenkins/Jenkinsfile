@@ -58,6 +58,25 @@ pipeline {
                 }
             }
         }
+        stage('Maintenance: Cache Check') {
+            steps {
+                script {
+                    // Check size of the caches in Megabytes
+                    // // 2000000 KB is roughly 2G
+                    sh '''
+                      CACHE_SIZE=$(du -s ${WORKSPACE}/.go-cache ${WORKSPACE}/.npm-cache 2>/dev/null | awk '{sum += $1} END {print sum}')
+                      echo "Current Cache Size: ${CACHE_SIZE} KB"
+                      if [ "${CACHE_SIZE}" -gt 2000000 ]; then
+                        echo "Cache limit exceeded. Clearing caches..."
+                        rm -rf ${WORKSPACE}/.go-cache/*
+                        rm -rf ${WORKSPACE}/.npm-cache/*
+                      else
+                        echo "Cache size is within limits."
+                      fi
+                    '''
+                }
+            }
+        }
     }
     // The POST block: This runs after the stages are finished
     post {
