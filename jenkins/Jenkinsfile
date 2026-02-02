@@ -12,8 +12,13 @@ pipeline {
                 docker {
                     image 'snakee/golang-junit:1.21'
                     reuseNode true
-                    // Redirect GOCACHE and GOPATH to the workspace                    
-                    args '-e GOCACHE=/tmp/.cache -e GOPATH=/tmp/go'
+                    // Redirect GOCACHE and GOPATH to the workspace
+                    // This ensures downloads persist between runs
+                    args '''
+                        -e GOCACHE=/tmp/.cache 
+                        -e GOPATH=/var/jenkins_home/go-cache 
+                        -v /var/jenkins_home/go-cache:/var/jenkins_home/go-cache
+                    '''
                 }
             }
             steps {
@@ -29,6 +34,8 @@ pipeline {
                 docker {
                     image 'node:20-alpine'
                     reuseNode true
+                    // This ensures downloads persist between runs
+                    args '-v /var/jenkins_home/npm-cache:/.npm -e npm_config_cache=/.npm'
                 }
             }
             steps {
