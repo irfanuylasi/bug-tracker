@@ -59,4 +59,23 @@ pipeline {
             }
         }
     }
+    // The POST block: This runs after the stages are finished
+    post {
+        always {
+            echo 'Pipeline finished. Cleaning up workspace...'
+            // This clears the workspace to prevent disk bloat
+            // but you might want to remove this if you want to keep caches
+            // cleanWs() 
+        }
+        success {
+            echo 'Build Successful! Sending notification...'
+            cleanWs() 
+
+        }
+        failure {
+            echo 'Build Failed! Check logs for permission or test errors.'
+            cleanWs() 
+
+        }
+    }
 }
