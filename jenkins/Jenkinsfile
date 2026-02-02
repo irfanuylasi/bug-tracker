@@ -7,6 +7,12 @@ pipeline {
     // }
 
     stages {
+        stage('Prepare Environment') {
+            steps {
+                // Create the directory and set permissions before the Docker agent starts
+                sh 'mkdir -p /var/jenkins_home/go-cache && chmod 777 /var/jenkins_home/go-cache'
+                }
+        }
         stage('Unit tests - Backend') {
             agent {
                 docker {
