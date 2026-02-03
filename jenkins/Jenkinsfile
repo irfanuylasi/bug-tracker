@@ -13,93 +13,97 @@ pipeline {
 //                 sh 'mkdir -p /var/jenkins_home/go-cache && chmod 777 /var/jenkins_home/go-cache'
 //                 }
 //        }
-        stage('Unit tests - Backend') {
-            agent {
-                docker {
-                    image 'snakee/golang-junit:1.21'
-                    reuseNode true
-                    // Redirect GOCACHE and GOPATH to the workspace
-                    // This ensures downloads persist between runs
-                    args '''
-                        -e GOCACHE=${WORKSPACE}/.go-cache/cache
-                        -e GOPATH=${WORKSPACE}/.go-cache/path 
-                        -v /var/jenkins_home/go-cache:/var/jenkins_home/go-cache
-                    '''
+        stage('Execute FE & BE Unit Test') {
+            parallel {
+                stage('Unit tests - Backend') {
+                    agent {
+                        docker {
+                            image 'snakee/golang-junit:1.21'
+                            reuseNode true
+                            // Redirect GOCACHE and GOPATH to the workspace
+                            // This ensures downloads persist between runs
+                            args '''
+                                -e GOCACHE=${WORKSPACE}/.go-cache/cache
+                                -e GOPATH=${WORKSPACE}/.go-cache/path 
+                                -v /var/jenkins_home/go-cache:/var/jenkins_home/go-cache
+                            '''
+                        }
+                    }
+                    steps {
+                        dir('bugtracker-backend') {
+                        // This will now work because 'go' is in the PATH
+                        // This is to execute tests without any report
+                        // sh 'go test -v ./...'
+                        // This is to execute tests with a test report
+                        sh '''
+                            go test -v ./... 2>&1 | go-junit-report > test_results.xml
+                            # Generate coverage report
+                            go test -coverprofile=coverage.out -covermode=atomic ./...
+                            go tool cover -html=coverage.out -o coverage.html
+
+                            mkdir -p reports
+                            mv coverage.html reports/
+                        '''
+                        }
+                        sh 'date'
+                    }
+                    post {
+                        always {
+                            junit 'bugtracker-backend/test_results.xml'
+
+                            publishHTML( target: [
+                                reportDir: 'bugtracker-backend/reports',
+                                reportFiles: 'coverage.html',
+                                reportName: 'Backend Coverage Report'
+                                ]
+                            )
+                        }
+                    }
                 }
-            }
-            steps {
-                dir('bugtracker-backend') {
-                    // This will now work because 'go' is in the PATH
-                    // This is to execute tests without any report
-                    // sh 'go test -v ./...'
-                    // This is to execute tests with a test report
-                    sh '''
-                      go test -v ./... 2>&1 | go-junit-report > test_results.xml
 
-                      # Generate coverage report
-                      go test -coverprofile=coverage.out -covermode=atomic ./...
-                      go tool cover -html=coverage.out -o coverage.html
+                stage('Unit tests - Frontend'){
+                    agent {
+                        docker {
+                            image 'node:20-alpine'
+                            reuseNode true
+                            // Redirect npm cache to the workspace to avoid permission issues
+                            args '-e npm_config_cache=${WORKSPACE}/.npm-cache'
+                            // This ensures downloads persist between runs
+                            // args '-v /var/jenkins_home/npm-cache:/.npm -e npm_config_cache=/.npm'
+                        }
+                    }
 
-                      mkdir -p reports
-                      mv coverage.html reports/
+                    steps {
+                        dir('bugtracker-frontend') {
+                            sh '''
+                            # Forcefully remove node_modules if it exists
+                            # This bypasses the npm 'rmdir' struggle
+                            rm -rf node_modules
+                            npm ci
+                            npm test
 
-                    '''
-                }
-                sh 'date'
-            }
-            post {
-                always {
-                    junit 'bugtracker-backend/test_results.xml'
-
-                    publishHTML( target: [
-                        reportDir: 'bugtracker-backend/reports',
-                        reportFiles: 'coverage.html',
-                        reportName: 'Backend Coverage Report'
-                        ]
-                    )
+                            mkdir -p reports
+                            mv coverage reports/
+                            '''
+                        }
+                    }
+                    // post actions after frontend tests
+                    post {
+                        always {
+                            junit 'bugtracker-frontend/test-results.xml'
+                            publishHTML(target: [
+                                reportDir: 'bugtracker-frontend/reports/coverage',
+                                reportFiles: 'index.html',
+                                reportName: 'Frontend Coverage Report'
+                                ]
+                            )
+                        }
+                    }
                 }
             }
         }
-        stage('Unit tests - Frontend'){
-            agent {
-                docker {
-                    image 'node:20-alpine'
-                    reuseNode true
-                    // Redirect npm cache to the workspace to avoid permission issues
-                    args '-e npm_config_cache=${WORKSPACE}/.npm-cache'
-                    // This ensures downloads persist between runs
-                    // args '-v /var/jenkins_home/npm-cache:/.npm -e npm_config_cache=/.npm'
-                }
-            }
-            steps {
-                dir('bugtracker-frontend') {
-                    sh '''
-                      # Forcefully remove node_modules if it exists
-                      # This bypasses the npm 'rmdir' struggle
-                      rm -rf node_modules
-                      npm ci
-                      npm test
 
-                      mkdir -p reports
-                      mv coverage reports/
-                    '''
-                }
-            }
-            // post actions after frontend tests
-            post {
-                always {
-                    junit 'bugtracker-frontend/test-results.xml'
-                    publishHTML(target: [
-                        reportDir: 'bugtracker-frontend/reports/coverage',
-                        reportFiles: 'index.html',
-                        reportName: 'Frontend Coverage Report'
-                    ]
 
-                    )
-                }
-
-            }
-        }
         stage('Maintenance: Cache Check') {
             steps {
                 script {
