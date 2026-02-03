@@ -52,7 +52,7 @@ pipeline {
                     junit 'bugtracker-backend/test_results.xml'
 
                     publishHTML( target: [
-                        reportDir: 'bugtracker-backend/reports/',
+                        reportDir: 'bugtracker-backend/reports',
                         reportFiles: 'coverage.html',
                         reportName: 'Backend Coverage Report'
                         ]
@@ -79,6 +79,9 @@ pipeline {
                       rm -rf node_modules
                       npm ci
                       npm test
+
+                      mkdir -p reports
+                      mv coverage reports/
                     '''
                 }
             }
@@ -86,6 +89,13 @@ pipeline {
             post {
                 always {
                     junit 'bugtracker-frontend/test-results.xml'
+                    publishHTML(target: [
+                        reportDir: 'bugtracker-frontend/reports/coverage',
+                        reportFiles: 'index.html',
+                        reportName: 'Frontend Coverage Report'
+                    ]
+
+                    )
                 }
 
             }
