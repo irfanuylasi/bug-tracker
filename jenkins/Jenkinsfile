@@ -30,9 +30,17 @@ pipeline {
             steps {
                 dir('bugtracker-backend') {
                     // This will now work because 'go' is in the PATH
-                    sh 'go test -v ./...'
+                    // This is to execute tests without any report
+                    // sh 'go test -v ./...'
+                    // This is to execute tests with a test report
+                    sh 'go test -v ./... 2>&1 | go-junit-report > test_results.xml'
                 }
                 sh 'date'
+            }
+            post {
+                always {
+                    junit 'bugtracker-backend/test_results.xml'
+                }
             }
         }
         stage('Unit tests - Frontend'){
