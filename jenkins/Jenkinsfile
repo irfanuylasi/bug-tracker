@@ -132,6 +132,17 @@ pipeline {
                     sh 'npx playwright test'
                 }
             }
+            // Publish API test results
+            post {
+                always {
+                    junit 'tests-api/test-results/results.xml'
+                    publishHTML(target: [
+                        reportDir: 'tests-api/playwright-report',
+                        reportFiles: 'index.html',
+                        reportName: 'Playwright API Test Report'
+                    ])
+                }
+            }
         }
         stage('Maintenance: Cache Check') {
             steps {
