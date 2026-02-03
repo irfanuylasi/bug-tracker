@@ -33,13 +33,28 @@ pipeline {
                     // This is to execute tests without any report
                     // sh 'go test -v ./...'
                     // This is to execute tests with a test report
-                    sh 'go test -v ./... 2>&1 | go-junit-report > test_results.xml'
+                    sh '''
+                      go test -v ./... 2>&1 | go-junit-report > test_results.xml
+
+                      # Generate coverage report
+                      go test coverprofile=coverage.out -covermode=atomic ./...
+                      go tool cover -html=coverage.out -o coverage.html
+
+                      mkdir -p reports
+                      mv coverage.html reports/
+
+                    '''
                 }
                 sh 'date'
             }
             post {
                 always {
                     junit 'bugtracker-backend/test_results.xml'
+                    publishHTML target: [
+                        reportDir: 'bugtracker-backend/reports',
+                        reportFiles: 'coverage.html',
+                        reportName: 'Backend Coverage Report'
+                    ]
                 }
             }
         }
