@@ -69,6 +69,7 @@ pipeline {
                             // Redirect npm cache to the workspace to avoid permission issues
                             args '''
                                 --network=host
+                                -e CI=true
                                 -e npm_config_cache=${WORKSPACE}/.npm-cache
                                 -e npm_config_fetch_retries=5
                                 -e npm_config_fetch_retries_mintimeout=20000
@@ -87,7 +88,7 @@ pipeline {
                             # This bypasses the npm 'rmdir' struggle
                             rm -rf node_modules
                             npm ci
-                            npm test
+                            npm test -- --testTimeout=30000 --watchAll=false
 
                             mkdir -p reports
                             mv coverage reports/
