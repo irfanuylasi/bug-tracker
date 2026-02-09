@@ -89,7 +89,7 @@ pipeline {
                             rm -rf node_modules
                             npm ci
                             npm test --watchAll=false
-                            npm test -- --runInBand --testTimeout=120000 --maxWorkers=1 --no-cache --reporters=default --reporters=jest-junit
+                            npm test -- --runInBand --testTimeout=120000 --no-cache --reporters=default --reporters=jest-junit
 
                             mkdir -p reports
                             mv coverage reports/
