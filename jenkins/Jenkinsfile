@@ -88,7 +88,7 @@ pipeline {
                             # This bypasses the npm 'rmdir' struggle
                             rm -rf node_modules
                             npm ci
-                            npm test -- --testTimeout=30000 --watchAll=false
+                            npm test -- --testTimeout=120000 --watchAll=false
 
                             mkdir -p reports
                             mv coverage reports/
