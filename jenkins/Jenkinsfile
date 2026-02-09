@@ -128,7 +128,13 @@ pipeline {
                 docker {
                     image 'mcr.microsoft.com/playwright:v1.50.0-jammy'
                     reuseNode true
-                    args '-u 0 --network=host'
+                    args '''
+                        -u 0 --network=host
+                        -e npm_config_cache=${WORKSPACE}/.npm-cache
+                        -e npm_config_fetch_retries=5
+                        -e npm_config_fetch_retries_mintimeout=20000
+                        -e npm_config_fetch_retries_maxtimeout=120000
+                        '''
                 }
             }
             steps {
