@@ -119,8 +119,8 @@ pipeline {
             }
 
             steps{
-                sh 'docker compose up --build -d'
-
+                sh 'docker compose build  --network=host'
+                sh 'docker compose up -d'
             }
         }
         stage('API tests') {
