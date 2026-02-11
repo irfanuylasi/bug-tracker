@@ -31,52 +31,54 @@ pipeline {
         stage('JMeter Performance Tests') {
             agent {
                 docker {
-                    image 'justb4/jmeter:latest'
+                    image 'egaillardon/jmeter:latest'
                     reuseNode true
-                    args '--network=host -u root --entrypoint=""'
+                    args '--network=host'
                 }
             }
             steps {
                 dir('tests-perf') {
                     sh '''
+                        # Basic load test
                         rm -rf jmeter-report jmeter-results.jtl
                         jmeter -n \
                           -t bugtracker-jmeter.jmx \
                           -l jmeter-results.jtl \
                           -e -o jmeter-report
+                        
+                        # Bulk test: Create 100 bugs and list them
+                        rm -rf bulk-report bulk-results.jtl
+                        jmeter -n \
+                          -t bugtracker-bulk-test.jmx \
+                          -l bulk-results.jtl \
+                          -e -o bulk-report
                     '''
                 }
             }
             post {
                 always {
-                    // Approach 1: HTML Dashboard
                     publishHTML(target: [
                         reportDir: 'tests-perf/jmeter-report',
                         reportFiles: 'index.html',
-                        reportName: 'JMeter HTML Dashboard',
+                        reportName: 'JMeter Load Test Report',
                         keepAll: true,
                         alwaysLinkToLastBuild: true
                     ])
                     
-                    // Approach 2: Archive raw results
-                    archiveArtifacts artifacts: 'tests-perf/jmeter-results.jtl',
+                    publishHTML(target: [
+                        reportDir: 'tests-perf/bulk-report',
+                        reportFiles: 'index.html',
+                        reportName: 'JMeter Bulk Test (100 Bugs)',
+                        keepAll: true,
+                        alwaysLinkToLastBuild: true
+                    ])
+                    
+                    archiveArtifacts artifacts: 'tests-perf/*.jtl',
                                      allowEmptyArchive: false,
                                      fingerprint: true
-                    
-                    // Approach 3: Performance Plugin (requires Performance Plugin installed)
-                    // Uncomment after installing Performance Plugin from Jenkins Plugin Manager
-                    /*
-                    perfReport sourceDataFiles: 'tests-perf/jmeter-results.jtl',
-                               errorFailedThreshold: 5,
-                               errorUnstableThreshold: 2,
-                               errorUnstableResponseTimeThreshold: 'Health Check:500;Create Bug:1000'
-                    */
                 }
                 success {
                     echo '✅ Performance tests passed!'
-                }
-                unstable {
-                    echo '⚠️ Performance tests unstable - check thresholds'
                 }
                 failure {
                     echo '❌ Performance tests failed!'
