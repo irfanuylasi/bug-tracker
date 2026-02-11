@@ -34,6 +34,7 @@ pipeline {
                     image 'justb4/jmeter:latest'
                     reuseNode true
                     args '--network=host -u root --entrypoint=""'
+                }
             }
             steps {
                 dir('tests-perf') {
