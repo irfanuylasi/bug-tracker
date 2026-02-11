@@ -176,16 +176,49 @@ pipeline {
         }
 
         stage('Performance Tests') {
-            agent {
-                docker {
-                    image 'grafana/k6:latest'
-                    reuseNode true
-                    args '--network=host -u root --entrypoint=""'
+            parallel {
+                stage('K6 Performance Tests') {
+                    agent {
+                        docker {
+                            image 'grafana/k6:latest'
+                            reuseNode true
+                            args '--network=host -u root --entrypoint=""'
+                        }
+                    }
+                    steps {
+                        dir('tests-perf') {
+                            sh 'k6 run script.js'
+                        }
+                    }
                 }
-            }
-            steps {
-                dir('tests-perf') {
-                    sh 'k6 run script.js'
+
+                stage('JMeter Performance Tests') {
+                    agent {
+                        docker {
+                            image 'justb4/jmeter:latest'
+                            reuseNode true
+                            args '--network=host -u root --entrypoint=""'
+                        }
+                    }
+                    steps {
+                        dir('tests-perf') {
+                            sh '''
+                                jmeter -n \
+                                  -t bugtracker-jmeter.jmx \
+                                  -l jmeter-results.jtl \
+                                  -e -o jmeter-report
+                            '''
+                        }
+                    }
+                    post {
+                        always {
+                            publishHTML(target: [
+                                reportDir: 'tests-perf/jmeter-report',
+                                reportFiles: 'index.html',
+                                reportName: 'JMeter Performance Report'
+                            ])
+                        }
+                    }
                 }
             }
         }
