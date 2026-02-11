@@ -67,7 +67,15 @@ pipeline {
                             image 'node:20-alpine'
                             reuseNode true
                             // Redirect npm cache to the workspace to avoid permission issues
-                            args '-e npm_config_cache=${WORKSPACE}/.npm-cache'
+                            args '''
+                                --network=host
+                                -e CI=true
+                                -e npm_config_cache=${WORKSPACE}/.npm-cache
+                                -e npm_config_fetch_retries=5
+                                -e npm_config_fetch_retries_mintimeout=20000
+                                -e npm_config_fetch_retries_maxtimeout=120000
+                            '''
+
                             // This ensures downloads persist between runs
                             // args '-v /var/jenkins_home/npm-cache:/.npm -e npm_config_cache=/.npm'
                         }
@@ -80,7 +88,8 @@ pipeline {
                             # This bypasses the npm 'rmdir' struggle
                             rm -rf node_modules
                             npm ci
-                            npm test
+                            npm test --watchAll=false
+                            npm test -- --runInBand --silent --no-cache --reporters=default --reporters=jest-junit
 
                             mkdir -p reports
                             mv coverage reports/
@@ -112,8 +121,8 @@ pipeline {
             }
 
             steps{
-                sh 'docker compose up --build -d'
-
+                sh 'docker compose build  --network=host'
+                sh 'docker compose up -d'
             }
         }
         stage('API tests') {
@@ -121,7 +130,13 @@ pipeline {
                 docker {
                     image 'mcr.microsoft.com/playwright:v1.50.0-jammy'
                     reuseNode true
-                    args '-u 0 --network=host'
+                    args '''
+                        -u 0 --network=host
+                        -e npm_config_cache=${WORKSPACE}/.npm-cache
+                        -e npm_config_fetch_retries=5
+                        -e npm_config_fetch_retries_mintimeout=20000
+                        -e npm_config_fetch_retries_maxtimeout=120000
+                        '''
                 }
             }
             steps {
@@ -161,6 +176,21 @@ pipeline {
             }
         }
 
+        stage('Performance Tests') {
+            agent {
+                docker {
+                    image 'grafana/k6:latest'
+                    reuseNode true
+                    args '--network=host -u root --entrypoint=""'
+                }
+            }
+            steps {
+                dir('tests-perf') {
+                    sh 'k6 run script.js'
+                }
+            }
+        }
+
         stage('Maintenance: Cache Check') {
             steps {
                 script {
@@ -196,8 +226,7 @@ pipeline {
         }
         failure {
             echo 'Build Failed! Check logs for permission or test errors.'
-            cleanWs() 
-
+            // cleanWs() 
         }
     }
 }
