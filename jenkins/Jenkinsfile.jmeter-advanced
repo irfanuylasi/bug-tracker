@@ -31,9 +31,9 @@ pipeline {
         stage('JMeter Performance Tests') {
             agent {
                 docker {
-                    image 'egaillardon/jmeter:latest'
+                    image 'justb4/jmeter:latest'
                     reuseNode true
-                    args '--network=host'
+                    args '--network=host -u root --entrypoint=""'
                 }
             }
             steps {
@@ -57,6 +57,7 @@ pipeline {
             }
             post {
                 always {
+                    // Approach 1: HTML Dashboard
                     publishHTML(target: [
                         reportDir: 'tests-perf/jmeter-report',
                         reportFiles: 'index.html',
