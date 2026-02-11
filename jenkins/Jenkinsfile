@@ -190,6 +190,15 @@ pipeline {
                             sh 'k6 run script.js'
                         }
                     }
+                    post {
+                        always {
+                            publishHTML(target: [
+                                reportDir: 'tests-perf',
+                                reportFiles: 'perf-results.html',
+                                reportName: 'K6 Performance Test Results'
+                                ])
+                        }
+                    }
                 }
 
                 stage('JMeter Performance Tests') {
