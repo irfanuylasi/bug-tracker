@@ -31,9 +31,9 @@ pipeline {
         stage('JMeter Performance Tests') {
             agent {
                 docker {
-                    image 'justb4/jmeter:latest'
+                    image 'egaillardon/jmeter:latest'
                     reuseNode true
-                    args '--network=host -u root --entrypoint=""'
+                    args '--network=host'
                 }
             }
             steps {
@@ -49,12 +49,37 @@ pipeline {
             }
             post {
                 always {
+                    // Approach 1: HTML Dashboard
                     publishHTML(target: [
                         reportDir: 'tests-perf/jmeter-report',
                         reportFiles: 'index.html',
-                        reportName: 'JMeter Performance Report'
+                        reportName: 'JMeter HTML Dashboard',
+                        keepAll: true,
+                        alwaysLinkToLastBuild: true
                     ])
-                    archiveArtifacts artifacts: 'tests-perf/jmeter-results.jtl', allowEmptyArchive: true
+                    
+                    // Approach 2: Archive raw results
+                    archiveArtifacts artifacts: 'tests-perf/jmeter-results.jtl',
+                                     allowEmptyArchive: false,
+                                     fingerprint: true
+                    
+                    // Approach 3: Performance Plugin (requires Performance Plugin installed)
+                    // Uncomment after installing Performance Plugin from Jenkins Plugin Manager
+                    /*
+                    perfReport sourceDataFiles: 'tests-perf/jmeter-results.jtl',
+                               errorFailedThreshold: 5,
+                               errorUnstableThreshold: 2,
+                               errorUnstableResponseTimeThreshold: 'Health Check:500;Create Bug:1000'
+                    */
+                }
+                success {
+                    echo '✅ Performance tests passed!'
+                }
+                unstable {
+                    echo '⚠️ Performance tests unstable - check thresholds'
+                }
+                failure {
+                    echo '❌ Performance tests failed!'
                 }
             }
         }
@@ -78,10 +103,10 @@ pipeline {
             echo 'Performance test pipeline finished.'
         }
         success {
-            echo 'Performance tests passed!'
+            echo '✅ All stages completed successfully!'
         }
         failure {
-            echo 'Performance tests failed! Check the JMeter report.'
+            echo '❌ Pipeline failed! Check the reports.'
         }
     }
 }

@@ -203,6 +203,7 @@ pipeline {
                     steps {
                         dir('tests-perf') {
                             sh '''
+                                rm -rf jmeter-report jmeter-results.jtl
                                 jmeter -n \
                                   -t bugtracker-jmeter.jmx \
                                   -l jmeter-results.jtl \
@@ -212,11 +213,24 @@ pipeline {
                     }
                     post {
                         always {
+                            // Approach 1: HTML Dashboard Report
                             publishHTML(target: [
                                 reportDir: 'tests-perf/jmeter-report',
                                 reportFiles: 'index.html',
-                                reportName: 'JMeter Performance Report'
+                                reportName: 'JMeter Performance Report',
+                                keepAll: true,
+                                alwaysLinkToLastBuild: true
                             ])
+                            
+                            // Approach 2: Archive raw results for analysis
+                            archiveArtifacts artifacts: 'tests-perf/jmeter-results.jtl', 
+                                             allowEmptyArchive: false,
+                                             fingerprint: true
+                            
+                            // Approach 3: Performance Plugin (requires plugin installation)
+                            // perfReport sourceDataFiles: 'tests-perf/jmeter-results.jtl',
+                            //            errorFailedThreshold: 5,
+                            //            errorUnstableThreshold: 2
                         }
                     }
                 }
