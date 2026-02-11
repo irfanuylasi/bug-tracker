@@ -116,13 +116,12 @@ pipeline {
                 docker {
                     image 'docker:27.5.1'
                     reuseNode true
-                    args '-v /var/run/docker.sock:/var/run/docker.sock -u 0'
+                    args '-v /var/run/docker.sock:/var/run/docker.sock -u 0 --network=host'
                 }
             }
 
             steps{
-                sh 'docker compose build  --network=host'
-                sh 'docker compose up -d'
+                sh 'docker compose up --build -d'
             }
         }
         stage('API tests') {
@@ -217,7 +216,7 @@ pipeline {
             echo 'Pipeline finished. Cleaning up workspace...'
             // This clears the workspace to prevent disk bloat
             // but you might want to remove this if you want to keep caches
-            // cleanWs() 
+            cleanWs() 
         }
         success {
             echo 'Build Successful! Sending notification...'
@@ -226,7 +225,7 @@ pipeline {
         }
         failure {
             echo 'Build Failed! Check logs for permission or test errors.'
-            // cleanWs() 
+            cleanWs() 
         }
     }
 }
