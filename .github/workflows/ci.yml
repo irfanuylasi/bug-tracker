@@ -149,8 +149,8 @@ jobs:
             CI: "1"
           run: |
             npm ci
-            npx playright install
-            npx playright test
+            npx playwright install
+            npx playwright test
 
         - name: Shut down the application
           run: docker compose down
