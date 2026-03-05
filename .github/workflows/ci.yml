@@ -125,7 +125,7 @@ jobs:
               ${{ needs.unit-tests-frontend.outputs.coverage }}        
 
               ```
-    api-tests:
+    api-e2e-tests:
       needs: [unit-tests-backend, unit-tests-frontend]
       runs-on: ubuntu-latest
       steps:
@@ -142,6 +142,15 @@ jobs:
           run: |
             npm ci
             npx playwright test
+
+        - name: Run E2E tests
+          working-directory: ./tests-e2e
+          env:
+            CI: "1"
+          run: |
+            npm ci
+            npx playright install
+            npx playright test
 
         - name: Shut down the application
           run: docker compose down
@@ -167,4 +176,4 @@ jobs:
           with:
             name: API Tests Report
             path: ./tests-api/test-results/*.xml
-            reporter: jest-junit                  
+            reporter: jest-junit
