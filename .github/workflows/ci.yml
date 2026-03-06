@@ -125,7 +125,7 @@ jobs:
               ${{ needs.unit-tests-frontend.outputs.coverage }}        
 
               ```
-    api-e2e-tests:
+    api-e2e-perf-tests:
       needs: [unit-tests-backend, unit-tests-frontend]
       runs-on: ubuntu-latest
       steps:
@@ -196,4 +196,4 @@ jobs:
           with:
             name: E2E Tests Report
             path: ./tests-e2e/test-results/*.xml
-            reporter: jest-junit            
+            reporter: jest-junit
