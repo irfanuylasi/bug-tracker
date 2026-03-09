@@ -168,26 +168,26 @@ jobs:
             name: api-test-results
             path: ./tests-api/test-results/
             retention-days: 30
-        - name: Upload API Test Playright Report
+        - name: Upload API Test Playwright Report
           if: always()
           uses: actions/upload-artifact@v4
           with:
-            name: api-test-playright-report
-            path: ./tests-api/playright-report
+            name: api-test-playwright-report
+            path: ./tests-api/playwright-report
             retention-days: 30
-        - name: Upload E2E Test Playright Results
+        - name: Upload E2E Test Playwright Results
           if: always()
           uses: actions/upload-artifact@v4
           with:
             name: E2E-test-results
             path: ./tests-e2e/test-results
             retention-days: 30
-        - name: Upload E2E Test Playright Report
+        - name: Upload E2E Test Playwright Report
           if: always()
           uses: actions/upload-artifact@v4
           with:
-            name: E2E-test-playright-report
-            path: ./tests-e2e/playright-report
+            name: E2E-test-playwright-report
+            path: ./tests-e2e/playwright-report
             retention-days: 30
 
         - name: Upload Performance raw results
