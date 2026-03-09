@@ -1,0 +1,80 @@
+pipeline {
+    agent any
+
+    stages {
+        stage('Launch Application') {
+            agent {
+                docker {
+                    image 'docker:27.5.1'
+                    reuseNode true
+                    args '-v /var/run/docker.sock:/var/run/docker.sock -u 0 --network=host'
+                }
+            }
+            steps {
+                sh 'docker compose up --build -d'
+            }
+        }
+
+        stage('Wait for Application') {
+            agent {
+                docker {
+                    image 'node:20-alpine'
+                    reuseNode true
+                    args '--network=host'
+                }
+            }
+            steps {
+                sh 'npx wait-port http://localhost:8080/api/health -t 30000'
+            }
+        }
+
+        stage('JMeter Performance Tests') {
+            agent {
+                docker {
+                    image 'egaillardon/jmeter:latest'
+                    reuseNode true
+                    args '--network=host'
+                }
+            }
+            steps {
+                dir('tests-perf') {
+                    sh '''
+                        rm -rf bulk-report bulk-results.jtl
+                        jmeter -n \
+                          -t bugtracker-bulk-test.jmx \
+                          -l bulk-results.jtl \
+                          -e -o bulk-report
+                    '''
+                }
+            }
+            post {
+                always {
+                    publishHTML(target: [
+                        reportDir: 'tests-perf/bulk-report',
+                        reportFiles: 'index.html',
+                        reportName: 'JMeter Bulk Test Report'
+                    ])
+                    archiveArtifacts artifacts: 'tests-perf/bulk-results.jtl', allowEmptyArchive: true
+                }
+            }
+        }
+
+        // NOTE: Cleanup stage removed - application keeps running with test data
+        // To manually stop: docker compose down
+    }
+
+    post {
+        always {
+            echo 'Performance test pipeline finished.'
+            echo 'Application is still running with test data.'
+            echo 'Access frontend at: http://localhost:3000'
+            echo 'To stop: docker compose down'
+        }
+        success {
+            echo '✅ Performance tests passed!'
+        }
+        failure {
+            echo '❌ Performance tests failed!'
+        }
+    }
+}
