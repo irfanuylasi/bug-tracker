@@ -52,7 +52,6 @@ jobs:
                 name: Backend Unit Tests Report
                 path: bugtracker-backend/test_results.xml
                 reporter: jest-junit          
-
             #   uses: actions/setup-go@v5
             #   with:
             #     go-version: '1.21'
